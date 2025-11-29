@@ -1,296 +1,546 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>Corporate Finance Calculator Suite</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
+<meta charset="utf-8" />
+<title>Corporate Finance Calculator Suite — With Graphs</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <style>
-/* --------- LIGHT THEME --------- */
-:root {
-    --primary: #0B2545;
-    --secondary: #1FB6A4;
-    --highlight: #F5A524;
-    --bg: #F7FAFC;
-    --card: #ffffff;
-    --text: #1F2D3D;
-    --shadow: rgba(0,0,0,0.1);
+/* ===== Theme variables ===== */
+:root{
+  --primary:#0B2545;
+  --secondary:#1FB6A4;
+  --highlight:#F5A524;
+  --bg:#F7FAFC;
+  --card:#ffffff;
+  --text:#1F2D3D;
+  --muted:#6b7280;
+  --shadow: rgba(11,37,69,0.08);
+  --glass: rgba(255,255,255,0.6);
+}
+:root.dark{
+  --primary:#e6f3ff;
+  --secondary:#32d4c2;
+  --highlight:#ffcd73;
+  --bg:#071022;
+  --card:#0f1724;
+  --text:#e6eef6;
+  --muted:#9aa6b2;
+  --shadow: rgba(2,6,23,0.6);
+  --glass: rgba(255,255,255,0.03);
 }
 
-/* --------- DARK THEME --------- */
-:root.dark {
-    --primary: #e5f2ff;
-    --secondary: #32d4c2;
-    --highlight: #ffcd73;
-    --bg: #0f172a;
-    --card: #1e293b;
-    --text: #e2e8f0;
-    --shadow: rgba(255,255,255,0.05);
+/* ===== Base styles ===== */
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background:var(--bg);
+  color:var(--text);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  transition: background .25s ease, color .25s ease;
+  padding-bottom:48px;
 }
 
-body {
-    background: var(--bg);
-    margin: 0;
-    font-family: "Inter", sans-serif;
-    color: var(--text);
-    transition: background 0.3s ease, color 0.3s ease;
+/* header + toggle */
+.header {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  padding:18px 16px;
+  background:linear-gradient(90deg,var(--primary), rgba(11,37,69,0.85));
+  color:white;
+  position:sticky;
+  top:0;
+  z-index:60;
+  box-shadow:0 6px 18px var(--shadow);
+}
+.brand {
+  display:flex;
+  gap:12px;
+  align-items:center;
+  font-weight:700;
+  letter-spacing:0.4px;
+}
+.logo {
+  height:44px; width:44px; border-radius:10px; background:linear-gradient(135deg,var(--secondary),var(--highlight));
+  display:flex; align-items:center; justify-content:center; color:var(--primary); font-weight:800;
+  box-shadow:0 8px 20px rgba(31,182,164,0.12);
+}
+.header .actions{display:flex; gap:10px; align-items:center}
+
+/* theme toggle */
+.theme-toggle{
+  background:transparent;
+  border:1px solid rgba(255,255,255,0.08);
+  color:inherit;
+  padding:8px 12px;
+  border-radius:999px;
+  cursor:pointer;
+  display:inline-flex;
+  gap:8px;
+  align-items:center;
+  font-weight:600;
 }
 
-/* Header */
-h1 {
-    text-align: center;
-    padding: 25px 10px;
-    background: var(--primary);
-    color: white;
-    margin: 0;
-    font-weight: 700;
-    letter-spacing: 1px;
+/* layout */
+.container{
+  max-width:1100px;
+  margin:22px auto;
+  padding:0 16px;
 }
 
-/* Theme Toggle */
-.theme-toggle {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: var(--secondary);
-    padding: 10px 14px;
-    border-radius: 30px;
-    font-weight: bold;
-    border: none;
-    cursor: pointer;
-    color: white;
-    box-shadow: 0 4px 12px var(--shadow);
-    transition: background 0.3s ease, transform 0.2s ease;
+/* grid */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(12,1fr);
+  gap:18px;
 }
 
-.theme-toggle:hover {
-    transform: scale(1.05);
-    background: var(--primary);
+/* card */
+.card{
+  background:var(--card);
+  border-radius:12px;
+  padding:18px;
+  box-shadow:0 8px 28px var(--shadow);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.card:hover{ transform:translateY(-6px)}
+
+/* responsive spans */
+.span-4{grid-column:span 4}
+.span-6{grid-column:span 6}
+.span-12{grid-column:span 12}
+@media (max-width:900px){
+  .span-4,.span-6{grid-column:span 12}
 }
 
-/* Card */
-.section {
-    max-width: 750px;
-    margin: 25px auto;
-    background: var(--card);
-    padding: 25px;
-    border-radius: 15px;
-    box-shadow: 0 8px 24px var(--shadow);
-    animation: fadeIn 0.5s ease;
-    transition: background 0.3s ease, box-shadow 0.3s ease;
+/* headings & forms */
+h1,h2{margin:0 0 10px 0}
+.small{color:var(--muted); font-size:13px}
+.input{width:100%; padding:10px 12px; border-radius:8px; border:1px solid #e6edf3; background:transparent; color:var(--text); margin-top:8px}
+:root.dark .input{border-color:#1e2a3a}
+.btn{
+  background:var(--secondary);
+  border:none;
+  color:white;
+  padding:10px 12px;
+  border-radius:10px;
+  cursor:pointer;
+  font-weight:700;
+  margin-top:12px;
+  display:inline-flex;
+  gap:8px; align-items:center;
+}
+.btn:hover{filter:brightness(.95); transform:translateY(-2px)}
+
+/* result area */
+.result{
+  margin-top:12px;
+  font-weight:700;
+  color:var(--highlight);
+  font-size:1.05rem;
 }
 
-/* Fade Animation */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(12px); }
-    to { opacity: 1; transform: translateY(0); }
+/* charts area */
+.canvas-wrap{margin-top:12px; border-radius:8px; overflow:hidden; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.02)); padding:10px;}
+.canvas{width:100%; height:220px; display:block}
+
+/* footer explanations */
+.explain{
+  margin-top:18px;
+  font-size:14px;
+  color:var(--muted);
+  line-height:1.5;
+  background:linear-gradient(90deg, rgba(31,182,164,0.03), transparent);
+  padding:12px;
+  border-radius:8px;
 }
 
-/* Inputs */
-input {
-    width: 100%;
-    padding: 12px;
-    border-radius: 10px;
-    border: 1px solid #ccc;
-    margin-top: 8px;
-    transition: 0.3s;
-    background: var(--bg);
-    color: var(--text);
-}
-
-input:focus {
-    border-color: var(--secondary);
-    box-shadow: 0 0 0 3px rgba(31,182,164,0.3);
-    outline: none;
-}
-
-/* Buttons */
-button.calc-btn {
-    background: var(--secondary);
-    padding: 12px 18px;
-    color: white;
-    border-radius: 10px;
-    border: none;
-    cursor: pointer;
-    font-weight: bold;
-    margin-top: 12px;
-    transition: 0.3s;
-}
-
-button.calc-btn:hover {
-    background: var(--primary);
-}
-
-/* Results */
-.result {
-    margin-top: 15px;
-    font-weight: bold;
-    color: var(--highlight);
-    font-size: 1.2rem;
-}
+/* small helper */
+.row{display:flex; gap:10px; align-items:center}
+.kpi{padding:8px 12px; border-radius:8px; background:linear-gradient(90deg, rgba(0,0,0,0.02), rgba(255,255,255,0.02)); font-weight:700}
+.footer-note{font-size:13px; color:var(--muted); text-align:center; margin-top:20px; padding-bottom:20px}
 </style>
 </head>
-
 <body>
 
-<button class="theme-toggle" onclick="toggleTheme()">🌙 Dark Mode</button>
+<!-- Header -->
+<header class="header">
+  <div class="brand">
+    <div class="logo">DF</div>
+    <div>
+      <div style="font-size:16px">DCF + Valuation Suite</div>
+      <div style="font-size:12px; color:rgba(255,255,255,0.85)">Tools · WACC · DGM · MSDDM · Charts</div>
+    </div>
+  </div>
 
-<h1>Corporate Finance Advanced Calculator Suite</h1>
+  <div class="actions">
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">🌙 Dark</button>
+  </div>
+</header>
 
-<!-- COST OF DEBENTURES -->
-<div class="section">
-    <h2>Cost of Debentures</h2>
-    <p><b>Formula:</b> (Interest / Net Proceeds) × (1 − Tax)</p>
+<!-- Container -->
+<main class="container">
+  <div class="grid">
 
-    <input id="debInterest" placeholder="Annual Interest (₹)">
-    <input id="debNet" placeholder="Net Proceeds (₹)">
-    <input id="debTax" placeholder="Tax Rate (%)">
+    <!-- Left column calculators (stacked) -->
+    <div class="card span-6">
+      <h2>Cost of Debentures</h2>
+      <div class="small">(Interest / Net proceeds) × (1 − Tax)</div>
+      <input id="debInterest" class="input" placeholder="Annual Interest (₹)">
+      <input id="debNet" class="input" placeholder="Net proceeds received (₹)">
+      <input id="debTax" class="input" placeholder="Tax rate (%)">
+      <div class="row">
+        <button class="btn" onclick="calcDebenture()">Calculate</button>
+        <div id="debResult" class="result"></div>
+      </div>
+      <div class="canvas-wrap">
+        <canvas id="debChart" class="canvas"></canvas>
+      </div>
+      <div class="explain">Cost of debentures measures the post-tax effective interest as percentage of funds received.</div>
+    </div>
 
-    <button class="calc-btn" onclick="calcDebenture()">Calculate</button>
-    <div id="debResult" class="result"></div>
-</div>
+    <div class="card span-6">
+      <h2>Cost of Equity (CAPM)</h2>
+      <div class="small">Re = Rf + β (Rm − Rf)</div>
+      <input id="capmRf" class="input" placeholder="Risk-free rate (%)">
+      <input id="capmBeta" class="input" placeholder="Beta (β)">
+      <input id="capmRm" class="input" placeholder="Market return (%)">
+      <div class="row">
+        <button class="btn" onclick="calcCAPM()">Calculate</button>
+        <div id="capmResult" class="result"></div>
+      </div>
+      <div class="explain">CAPM builds cost of equity from market risk premium scaled by beta.</div>
+    </div>
 
-<!-- CAPM -->
-<div class="section">
-    <h2>Cost of Equity (CAPM)</h2>
-    <p><b>Formula:</b> Re = Rf + β (Rm − Rf)</p>
+    <!-- DGM and WACC -->
+    <div class="card span-6">
+      <h2>Cost of Equity — DGM</h2>
+      <div class="small">Re = (D1 / P0) + g</div>
+      <input id="dgmD1" class="input" placeholder="Next year dividend D1">
+      <input id="dgmP0" class="input" placeholder="Current price P0">
+      <input id="dgmG" class="input" placeholder="Growth rate g (%)">
+      <div class="row">
+        <button class="btn" onclick="calcDGM()">Calculate</button>
+        <div id="dgmResult" class="result"></div>
+      </div>
+      <div class="canvas-wrap">
+        <canvas id="dgmSensitivity" class="canvas"></canvas>
+      </div>
+      <div class="explain">DGM gives implied return assuming perpetual dividend growth.</div>
+    </div>
 
-    <input id="capmRf" placeholder="Risk-Free Rate (%)">
-    <input id="capmBeta" placeholder="Beta (β)">
-    <input id="capmRm" placeholder="Market Return (%)">
+    <div class="card span-6">
+      <h2>WACC</h2>
+      <div class="small">(E/V)Re + (D/V)Rd(1−Tc)</div>
+      <input id="waccE" class="input" placeholder="Market value of equity (E)">
+      <input id="waccD" class="input" placeholder="Market value of debt (D)">
+      <input id="waccRe" class="input" placeholder="Cost of equity (%)">
+      <input id="waccRd" class="input" placeholder="Cost of debt (%)">
+      <input id="waccTax" class="input" placeholder="Tax rate (%)">
+      <div class="row">
+        <button class="btn" onclick="calcWACC()">Calculate</button>
+        <div id="waccResult" class="result"></div>
+      </div>
 
-    <button class="calc-btn" onclick="calcCAPM()">Calculate</button>
-    <div id="capmResult" class="result"></div>
-</div>
+      <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap">
+        <div style="flex:1">
+          <div class="canvas-wrap"><canvas id="waccPie" class="canvas" style="height:140px"></canvas></div>
+        </div>
+        <div style="flex:1">
+          <div class="canvas-wrap"><canvas id="waccBar" class="canvas" style="height:140px"></canvas></div>
+        </div>
+      </div>
 
-<!-- DGM -->
-<div class="section">
-    <h2>Cost of Equity — Dividend Growth Model</h2>
-    <p><b>Formula:</b> Re = (D1 / P0) + g</p>
+      <div class="explain">WACC blends equity and debt costs weighted by market values; tax shields lower effective debt cost.</div>
+    </div>
 
-    <input id="dgmD1" placeholder="Next Year Dividend (D1)">
-    <input id="dgmP0" placeholder="Current Price (P0)">
-    <input id="dgmG" placeholder="Growth Rate (%)">
+    <!-- Beta + MSDDM -->
+    <div class="card span-6">
+      <h2>Beta</h2>
+      <div class="small">β = Cov(Ri, Rm) / Var(Rm)</div>
+      <input id="betaCov" class="input" placeholder="Covariance with market (decimal)">
+      <input id="betaVar" class="input" placeholder="Variance of market (decimal)">
+      <div class="row">
+        <button class="btn" onclick="calcBeta()">Calculate</button>
+        <div id="betaResult" class="result"></div>
+      </div>
+      <div class="explain">Beta measures systematic risk; useful in CAPM to translate market premium to expected return.</div>
+    </div>
 
-    <button class="calc-btn" onclick="calcDGM()">Calculate</button>
-    <div id="dgmResult" class="result"></div>
-</div>
+    <div class="card span-6">
+      <h2>Multi-Stage DDM (2-stage)</h2>
+      <div class="small">High growth for N years, then stable growth</div>
+      <input id="msD0" class="input" placeholder="Current dividend D0">
+      <input id="msG1" class="input" placeholder="High growth rate g1 (%)">
+      <input id="msYears" class="input" placeholder="Years of high growth (N)">
+      <input id="msG2" class="input" placeholder="Stable growth g2 (%)">
+      <input id="msR" class="input" placeholder="Required return r (%)">
+      <div class="row">
+        <button class="btn" onclick="calcMSDDM()">Calculate</button>
+        <div id="msResult" class="result"></div>
+      </div>
+      <div class="canvas-wrap">
+        <canvas id="msChart" class="canvas"></canvas>
+      </div>
+      <div class="explain">Multi-stage DDM projects dividends in a high-growth phase then discounts a terminal value using Gordon's method.</div>
+    </div>
 
-<!-- WACC -->
-<div class="section">
-    <h2>Weighted Average Cost of Capital (WACC)</h2>
-    <p><b>Formula:</b> (E/V)Re + (D/V)Rd(1 − Tax)</p>
+    <!-- footer note -->
+    <div class="card span-12">
+      <h2>Notes & Quick Formulas</h2>
+      <div class="explain">
+        <strong>How values are projected:</strong> For MSDDM, dividends grow each year by the high growth rate then transition to stable growth. Terminal value uses Gordon formula: TV = D_{n+1} / (r − g).<br><br>
+        <strong>How discounting works:</strong> Present value = Σ_{t=1..n} cash_t / (1+r)^t. Use WACC or required return as r depending on cashflow owner.<br><br>
+        <strong>Sensitivity:</strong> Use DGM sensitivity grid to see how small changes in growth or required return affect value-per-share. Always check r > g to avoid invalid terminal formulas.
+      </div>
+      <div class="footer-note">Built local — graphs are custom-drawn with Canvas. Theme toggles saved to localStorage.</div>
+    </div>
 
-    <input id="waccE" placeholder="Market Value of Equity (E)">
-    <input id="waccD" placeholder="Market Value of Debt (D)">
-    <input id="waccRe" placeholder="Cost of Equity (%)">
-    <input id="waccRd" placeholder="Cost of Debt (%)">
-    <input id="waccTax" placeholder="Tax Rate (%)">
-
-    <button class="calc-btn" onclick="calcWACC()">Calculate</button>
-    <div id="waccResult" class="result"></div>
-</div>
-
-<!-- BETA -->
-<div class="section">
-    <h2>Beta Calculator</h2>
-    <p><b>Formula:</b> β = Cov(Ri, Rm) / Var(Rm)</p>
-
-    <input id="betaCov" placeholder="Covariance with Market">
-    <input id="betaVar" placeholder="Variance of Market">
-
-    <button class="calc-btn" onclick="calcBeta()">Calculate</button>
-    <div id="betaResult" class="result"></div>
-</div>
-
-<!-- MULTISTAGE DDM -->
-<div class="section">
-    <h2>Multi-Stage Dividend Discount Model</h2>
-    <p><b>Formula:</b> Two-stage high growth → terminal stable growth</p>
-
-    <input id="msD0" placeholder="Current Dividend (D0)">
-    <input id="msG1" placeholder="High Growth Rate (%)">
-    <input id="msYears" placeholder="Years of High Growth">
-    <input id="msG2" placeholder="Stable Growth Rate (%)">
-    <input id="msR" placeholder="Required Rate of Return (%)">
-
-    <button class="calc-btn" onclick="calcMSDDM()">Calculate</button>
-    <div id="msResult" class="result"></div>
-</div>
-
-<!-- EXPLANATION -->
-<div class="section" style="background:#eef7ff;">
-    <h2>Understanding These Finance Models</h2>
-    <p><b>Cost of Debentures:</b> Measures the post-tax cost of debt financing.</p>
-    <p><b>CAPM:</b> Computes cost of equity based on systematic market risk (β).</p>
-    <p><b>DGM:</b> Values equity assuming dividends grow perpetually.</p>
-    <p><b>WACC:</b> Weighted cost of debt + equity used for valuation.</p>
-    <p><b>Beta:</b> Indicates risk sensitivity of security returns vs market.</p>
-    <p><b>Multi-Stage DDM:</b> Preferred for firms with two distinct growth phases.</p>
-</div>
+  </div>
+</main>
 
 <script>
+/* ===== Theme management ===== */
+const themeToggle = document.getElementById('themeToggle');
+function applyThemeFromStorage() {
+  const t = localStorage.getItem('theme');
+  if (t === 'dark') {
+    document.documentElement.classList.add('dark');
+    themeToggle.textContent = '☀️ Light';
+  } else {
+    document.documentElement.classList.remove('dark');
+    themeToggle.textContent = '🌙 Dark';
+  }
+}
+function toggleTheme(){
+  const isDark = document.documentElement.classList.toggle('dark');
+  localStorage.setItem('theme', isDark ? 'dark' : 'light');
+  themeToggle.textContent = isDark ? '☀️ Light' : '🌙 Dark';
+}
+applyThemeFromStorage();
 
-/* THEME SYSTEM */
-function toggleTheme() {
-    const root = document.documentElement;
-    const isDark = root.classList.toggle("dark");
-    document.querySelector(".theme-toggle").innerText = isDark ? "☀️ Light Mode" : "🌙 Dark Mode";
-    localStorage.setItem("theme", isDark ? "dark" : "light");
+/* ===== Utilities ===== */
+function n(v){ v = parseFloat(v); return isNaN(v) ? 0 : v; }
+function formatPct(x){ return (x).toFixed(2) + '%'; }
+function clearCanvas(c){ const ctx = c.getContext('2d'); ctx.clearRect(0,0,c.width,c.height); }
+
+/* ===== Debenture ===== */
+function calcDebenture(){
+  const I = n(debInterest.value), NP = n(debNet.value), T = n(debTax.value)/100;
+  if (NP <= 0){ debResult.textContent = 'Net proceeds must be > 0'; drawDebChart(0,0); return; }
+  const kd = (I/NP) * (1 - T) * 100;
+  debResult.textContent = 'Cost of Debentures: ' + kd.toFixed(2) + '%';
+  drawDebChart(kd, (I/NP)*100);
+}
+function drawDebChart(kd, grossPct){
+  const c = document.getElementById('debChart');
+  resizeCanvasForDevice(c);
+  const ctx = c.getContext('2d');
+  clearCanvas(c);
+  const w=c.width,h=c.height; const pad=28;
+  // simple horizontal bar showing gross vs net effect
+  const barW = w - pad*2;
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted') || '#999';
+  ctx.fillRect(pad, h/2 - 18, barW, 36);
+  ctx.fillStyle = 'rgba(31,182,164,0.85)';
+  ctx.fillRect(pad, h/2 - 18, Math.max(0, Math.min(barW, barW * (grossPct/100))), 36);
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text');
+  ctx.font = '13px Inter, Arial';
+  ctx.fillText('Gross interest % (approx): ' + grossPct.toFixed(2) + '%', pad, h/2 - 26);
+  ctx.fillText('Post-tax cost (kd): ' + kd.toFixed(2) + '%', pad, h/2 + 48);
 }
 
-(function loadTheme() {
-    if (localStorage.getItem("theme") === "dark") {
-        document.documentElement.classList.add("dark");
-        document.querySelector(".theme-toggle").innerText = "☀️ Light Mode";
+/* ===== CAPM ===== */
+function calcCAPM(){
+  const Rf = n(capmRf.value), Beta = n(capmBeta.value), Rm = n(capmRm.value);
+  const Re = Rf + Beta * (Rm - Rf);
+  capmResult.textContent = 'Cost of Equity (CAPM): ' + Re.toFixed(2) + '%';
+}
+
+/* ===== DGM & sensitivity grid ===== */
+function calcDGM(){
+  const D1=n(dgmD1.value), P0=n(dgmP0.value), g=n(dgmG.value)/100;
+  if (P0 <= 0){ dgmResult.textContent='Price must be > 0'; drawDgmSensitivity(0,0); return; }
+  const Re = (D1/P0 + g) * 100;
+  dgmResult.textContent = 'Cost of Equity (DGM): ' + Re.toFixed(2) + '%';
+  drawDgmSensitivity(D1, P0);
+}
+
+/* Draw sensitivity: rows = growth [g-0.5% to g+0.5%], cols = required return [r-1% to r+1%] */
+function drawDgmSensitivity(D1,P0){
+  const canvas = document.getElementById('dgmSensitivity'); resizeCanvasForDevice(canvas);
+  const ctx = canvas.getContext('2d'); clearCanvas(canvas);
+  const W = canvas.width, H = canvas.height, pad=28;
+  if (P0===0){ ctx.fillStyle='#888'; ctx.fillText('No data', pad, pad); return; }
+  // center growth and r from computed DGM or defaults
+  const baseG = n(dgmG.value)/100 || 0.05;
+  const centerR = ((D1/P0)+baseG) || 0.12;
+  const rows=8, cols=10;
+  const cellW=(W - pad*2)/cols, cellH=(H - pad*2)/rows;
+  // compute values and find min/max to map color
+  let vals=[]; let min=1e9, max=-1e9;
+  for (let i=0;i<rows;i++){
+    let gg = baseG - 0.01 + (i*(0.02/(rows-1))); // +/-1%
+    for (let j=0;j<cols;j++){
+      let rr = centerR - 0.02 + (j*(0.04/(cols-1))); // +/-2%
+      let val = (D1/P0 + gg) / rr; // value in terms of multiple; higher = better
+      vals.push({i,j,val,gg,rr});
+      if (val<min) min=val; if (val>max) max=val;
     }
-})();
-
-/* Calculators */
-function calcDebenture() {
-    let I = parseFloat(debInterest.value), NP = parseFloat(debNet.value), T = debTax.value/100;
-    if (NP <= 0) return debResult.innerHTML = "Invalid Net Proceeds";
-    debResult.innerHTML = "Cost of Debentures: " + ((I/NP)*(1-T)*100).toFixed(2) + "%";
+  }
+  // draw grid
+  for (const cell of vals){
+    const x = pad + cell.j*cellW, y = pad + cell.i*cellH;
+    const norm = (cell.val - min) / (max - min || 1);
+    const rCol = Math.round(255*(1-norm)), gCol = Math.round(200*(norm)), bCol = Math.round(80*(norm));
+    ctx.fillStyle = `rgb(${rCol},${gCol},${bCol})`;
+    ctx.fillRect(x,y, cellW-2, cellH-2);
+  }
+  // overlay text
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text');
+  ctx.font='12px Inter';
+  ctx.fillText('DGM sensitivity (color = relative value). Rows: g; Cols: r', pad, 16);
 }
 
-function calcCAPM() {
-    let Rf = capmRf.value, B = capmBeta.value, Rm = capmRm.value;
-    capmResult.innerHTML = "Cost of Equity (CAPM): " + (parseFloat(Rf)+B*(Rm-Rf)).toFixed(2) + "%";
+/* ===== WACC charts ===== */
+function calcWACC(){
+  const E=n(waccE.value), D=n(waccD.value), Re=n(waccRe.value)/100, Rd=n(waccRd.value)/100, T=n(waccTax.value)/100;
+  const V=E + D;
+  if (V <= 0){ waccResult.textContent='E+D must be > 0'; drawWaccPie(0,0); drawWaccBar(0,0); return; }
+  const wE = E/V, wD = D/V;
+  const wacc = (wE * Re) + (wD * Rd * (1-T));
+  waccResult.textContent = 'WACC: ' + (wacc*100).toFixed(2) + '%';
+  // draw charts
+  drawWaccPie(wE,wD);
+  drawWaccBar(wE,wD, Re, Rd, T);
 }
 
-function calcDGM() {
-    let D1 = dgmD1.value, P0 = dgmP0.value, g = dgmG.value/100;
-    if (P0 <= 0) return dgmResult.innerHTML = "Invalid Price";
-    dgmResult.innerHTML = "Cost of Equity (DGM): " + (((D1/P0)+g)*100).toFixed(2) + "%";
+function drawWaccPie(wE,wD){
+  const canvas=document.getElementById('waccPie'); resizeCanvasForDevice(canvas);
+  const ctx=canvas.getContext('2d'); clearCanvas(canvas);
+  const cx=canvas.width/2, cy=canvas.height/2, r=Math.min(cx,cy)-12;
+  // background ring
+  ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--card');
+  ctx.beginPath(); ctx.arc(cx,cy,r+10,0,Math.PI*2); ctx.fill();
+  // draw slices
+  const start= -Math.PI/2;
+  const aE = wE*2*Math.PI;
+  ctx.beginPath(); ctx.moveTo(cx,cy); ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--secondary'); ctx.arc(cx,cy,r,start,start+aE); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(cx,cy); ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--primary'); ctx.arc(cx,cy,r,start+aE,start+2*Math.PI); ctx.closePath(); ctx.fill();
+  // labels
+  ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--text');
+  ctx.font='13px Inter';
+  ctx.fillText('Equity ' + (wE*100).toFixed(1)+'%', 12, 18);
+  ctx.fillText('Debt  ' + (wD*100).toFixed(1)+'%', 12, 36);
 }
 
-function calcWACC() {
-    let E = waccE.value, D = waccD.value, Re = waccRe.value/100, Rd = waccRd.value/100, T = waccTax.value/100;
-    let V = parseFloat(E)+parseFloat(D);
-    waccResult.innerHTML = "WACC: " + ((((E/V)*Re)+((D/V)*Rd*(1-T)))*100).toFixed(2) + "%";
+function drawWaccBar(wE,wD, Re=0, Rd=0, T=0){
+  const canvas=document.getElementById('waccBar'); resizeCanvasForDevice(canvas);
+  const ctx=canvas.getContext('2d'); clearCanvas(canvas);
+  const W=canvas.width, H=canvas.height, pad=32;
+  // bars for component costs: equity contribution and debt contribution (post-tax)
+  const eqContribution = wE * Re * 100;
+  const debtContribution = wD * Rd * (1-T) * 100;
+  const max = Math.max(eqContribution, debtContribution, 0.1);
+  // draw axes
+  ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--muted') || '#777';
+  ctx.font='12px Inter';
+  ctx.fillText('Component contributions (%)', pad, 16);
+  const barW = (W - pad*2)/2 - 10;
+  // equity bar
+  ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--secondary');
+  ctx.fillRect(pad, 36, Math.max(2, (eqContribution/max)*(barW)), 28);
+  ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--text');
+  ctx.fillText('Equity: ' + eqContribution.toFixed(2)+'%', pad, 76);
+  // debt bar
+  ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--primary');
+  ctx.fillRect(pad + barW + 30, 36, Math.max(2, (debtContribution/max)*(barW)), 28);
+  ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--text');
+  ctx.fillText('Debt (post-tax): ' + debtContribution.toFixed(2)+'%', pad + barW + 30, 76);
 }
 
-function calcBeta() {
-    let cov = betaCov.value, v = betaVar.value;
-    if (v == 0) return betaResult.innerHTML = "Variance cannot be zero";
-    betaResult.innerHTML = "Beta: " + (cov/v).toFixed(3);
+/* ===== Multi-stage DDM chart ===== */
+function calcMSDDM(){
+  const D0 = n(msD0.value), g1 = n(msG1.value)/100, nYears = Math.max(0, Math.floor(n(msYears.value))), g2 = n(msG2.value)/100, r = n(msR.value)/100;
+  if (r <= g2){ msResult.textContent = 'Required return must be > stable growth'; drawMsChart([],0,0); return; }
+  let pv = 0; let D = D0;
+  const series = [];
+  for (let t=1; t<=nYears; t++){
+    D = D * (1 + g1);
+    series.push({t, D});
+    pv += D / Math.pow(1+r, t);
+  }
+  // terminal
+  const terminal = (D * (1 + g2)) / (r - g2);
+  series.push({t: nYears + 1, D: terminal, terminal: true});
+  pv += terminal / Math.pow(1+r, nYears);
+  msResult.textContent = 'Intrinsic Value: ₹' + pv.toFixed(2);
+  drawMsChart(series, r, nYears);
 }
 
-function calcMSDDM() {
-    let D0 = +msD0.value, g1 = msG1.value/100, n = +msYears.value, g2 = msG2.value/100, r = msR.value/100;
-    let PV = 0, D = D0;
-
-    for (let t=1; t<=n; t++) {
-        D = D * (1 + g1);
-        PV += D / Math.pow(1+r, t);
+function drawMsChart(series, r, nYears){
+  const canvas = document.getElementById('msChart'); resizeCanvasForDevice(canvas);
+  const ctx = canvas.getContext('2d'); clearCanvas(canvas);
+  const W = canvas.width, H = canvas.height, pad=40;
+  if (!series || series.length === 0){ ctx.fillStyle='#888'; ctx.fillText('No data', pad, pad); return; }
+  // compute max
+  const max = Math.max(...series.map(s=>s.D));
+  // axes
+  ctx.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue('--muted'); ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(pad, H-pad); ctx.lineTo(W-pad, H-pad); ctx.stroke(); // x-axis
+  ctx.beginPath(); ctx.moveTo(pad, pad); ctx.lineTo(pad, H-pad); ctx.stroke(); // y-axis
+  ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--text'); ctx.font='12px Inter';
+  // points
+  const n = series.length;
+  for (let i=0;i<n;i++){
+    const x = pad + (i/(n-1))*(W - pad*2);
+    const y = H - pad - (series[i].D / max) * (H - pad*2);
+    // draw line to next
+    if (i < n-1){
+      const x2 = pad + ((i+1)/(n-1))*(W - pad*2);
+      const y2 = H - pad - (series[i+1].D / max)*(H-pad*2);
+      ctx.strokeStyle = 'rgba(31,182,164,0.9)'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x2,y2); ctx.stroke();
     }
-
-    let TV = (D*(1+g2)) / (r-g2);
-    PV += TV / Math.pow(1+r, n);
-
-    msResult.innerHTML = "Intrinsic Value: ₹" + PV.toFixed(2);
+    // point
+    ctx.fillStyle = series[i].terminal ? getComputedStyle(document.documentElement).getPropertyValue('--highlight') : getComputedStyle(document.documentElement).getPropertyValue('--secondary');
+    ctx.beginPath(); ctx.arc(x,y,4,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text');
+    ctx.fillText(series[i].terminal ? 'Terminal' : 'Year '+series[i].t, x-18, y-10);
+  }
 }
+
+/* ===== Beta ===== */
+function calcBeta(){
+  const cov = n(betaCov.value), v = n(betaVar.value);
+  if (v === 0){ betaResult.textContent = 'Variance cannot be zero'; return; }
+  betaResult.textContent = 'Beta: ' + (cov / v).toFixed(3);
+}
+
+/* ===== Helpers: responsive canvas resizing ===== */
+function resizeCanvasForDevice(c){
+  if (!c) return;
+  const ratio = window.devicePixelRatio || 1;
+  const rect = c.getBoundingClientRect();
+  c.width = Math.max(300, Math.floor(rect.width * ratio));
+  c.height = Math.max(120, Math.floor(rect.height * ratio));
+}
+
+/* ===== initialize small default canvas sizes on load ===== */
+function initAll(){
+  const canvases = document.querySelectorAll('canvas');
+  canvases.forEach(c=> resizeCanvasForDevice(c));
+  // initial draw placeholders
+  drawDebChart(0,0); drawWaccPie(0.6,0.4); drawWaccBar(0.6,0.4,0.12,0.06,0.25);
+  drawDgmSensitivity(1,1); drawMsChart([{t:1,D:1},{t:2,D:1.2},{t:3,D:1.5}],0.12,2);
+}
+window.addEventListener('resize',()=>{ document.querySelectorAll('canvas').forEach(c=> resizeCanvasForDevice(c)); initAll(); });
+initAll();
+
 </script>
-
 </body>
 </html>
