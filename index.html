@@ -1,398 +1,586 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<title>Corporate Finance Calculator Suite — With Graphs</title>
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<style>
-/* ===== Theme variables ===== */
-:root{
-  --primary:#0B2545;
-  --secondary:#1FB6A4;
-  --highlight:#F5A524;
-  --bg:#F7FAFC;
-  --card:#ffffff;
-  --text:#1F2D3D;
-  --muted:#6b7280;
-  --shadow: rgba(11,37,69,0.08);
-  --glass: rgba(255,255,255,0.6);
-}
-:root.dark{
-  --primary:#e6f3ff;
-  --secondary:#32d4c2;
-  --highlight:#ffcd73;
-  --bg:#071022;
-  --card:#0f1724;
-  --text:#e6eef6;
-  --muted:#9aa6b2;
-  --shadow: rgba(2,6,23,0.6);
-  --glass: rgba(255,255,255,0.03);
-}
+  <meta charset="utf-8" />
+  <title>Corporate Finance — Hybrid Dashboard & Analytics Suite</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <!-- jsPDF (for PDF export) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    /* ---------------- Theme variables ---------------- */
+    :root{
+      --bg: #f6f8fb;
+      --surface: #ffffff;
+      --glass: rgba(255,255,255,0.6);
+      --muted:#6b7280;
+      --text:#0f1724;
+      --primary:#08203a;      /* deep navy */
+      --accent-start:#0fb69a; /* teal */
+      --accent-end:#f5a524;   /* warm highlight */
+      --shadow: rgba(11,37,69,0.08);
+      --glass-2: rgba(255,255,255,0.7);
+      --card-radius: 12px;
+    }
+    :root.dark{
+      --bg:#071022;
+      --surface:#071827;
+      --glass: rgba(255,255,255,0.03);
+      --muted:#9aa6b2;
+      --text:#e6eef6;
+      --primary:#e6f3ff;
+      --accent-start:#32d4c2;
+      --accent-end:#ffcd73;
+      --shadow: rgba(2,6,23,0.6);
+    }
 
-/* ===== Base styles ===== */
-*{box-sizing:border-box}
-html,body{height:100%}
-body{
-  margin:0;
-  font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-  background:var(--bg);
-  color:var(--text);
-  -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
-  transition: background .25s ease, color .25s ease;
-  padding-bottom:48px;
-}
+    /* ---------------- Base ---------------- */
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: linear-gradient(180deg,var(--bg), #eef4f8 60%);
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      transition: background .25s ease, color .25s ease;
+    }
 
-/* header + toggle */
-.header {
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:16px;
-  padding:18px 16px;
-  background:linear-gradient(90deg,var(--primary), rgba(11,37,69,0.85));
-  color:white;
-  position:sticky;
-  top:0;
-  z-index:60;
-  box-shadow:0 6px 18px var(--shadow);
-}
-.brand {
-  display:flex;
-  gap:12px;
-  align-items:center;
-  font-weight:700;
-  letter-spacing:0.4px;
-}
-.logo {
-  height:44px; width:44px; border-radius:10px; background:linear-gradient(135deg,var(--secondary),var(--highlight));
-  display:flex; align-items:center; justify-content:center; color:var(--primary); font-weight:800;
-  box-shadow:0 8px 20px rgba(31,182,164,0.12);
-}
-.header .actions{display:flex; gap:10px; align-items:center}
+    /* ---------------- App shell ---------------- */
+    .app {
+      display:grid;
+      grid-template-columns: 260px 1fr;
+      min-height:100vh;
+    }
+    @media (max-width:980px){ .app{ grid-template-columns: 72px 1fr } }
+    @media (max-width:720px){ .app{ grid-template-columns: 1fr } }
 
-/* theme toggle */
-.theme-toggle{
-  background:transparent;
-  border:1px solid rgba(255,255,255,0.08);
-  color:inherit;
-  padding:8px 12px;
-  border-radius:999px;
-  cursor:pointer;
-  display:inline-flex;
-  gap:8px;
-  align-items:center;
-  font-weight:600;
-}
+    /* Sidebar */
+    .sidebar {
+      padding:18px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.8), rgba(255,255,255,0.6));
+      border-right:1px solid rgba(0,0,0,0.04);
+      box-shadow: 0 8px 28px var(--shadow);
+    }
+    .sidebar .brand{
+      display:flex; gap:12px; align-items:center; margin-bottom:14px;
+    }
+    .logo {
+      height:48px; width:48px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-weight:800;
+      background:linear-gradient(135deg,var(--accent-start),var(--accent-end)); color:var(--primary);
+      box-shadow:0 10px 24px rgba(15,182,164,0.12);
+    }
+    .brand h1{ font-size:15px; margin:0 }
+    .sidebar .muted{ font-size:12px; color:var(--muted) }
 
-/* layout */
-.container{
-  max-width:1100px;
-  margin:22px auto;
-  padding:0 16px;
-}
+    .nav {
+      margin-top:18px;
+      display:flex; flex-direction:column; gap:6px;
+    }
+    .nav button {
+      display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:8px; border:none;
+      background:transparent; color:var(--text); cursor:pointer; text-align:left; font-weight:600;
+    }
+    .nav button:hover{ background:rgba(0,0,0,0.03) }
+    .nav button.active {
+      background: linear-gradient(90deg,var(--accent-start),var(--accent-end));
+      color: white;
+      box-shadow: 0 8px 20px rgba(15,182,164,0.12);
+    }
 
-/* grid */
-.grid{
-  display:grid;
-  grid-template-columns:repeat(12,1fr);
-  gap:18px;
-}
+    /* collapse control */
+    .sidebar .collapse{
+      margin-top:12px; display:flex; gap:8px; align-items:center; justify-content:space-between;
+    }
+    .collapse button{ padding:8px 10px; border-radius:8px; border:1px solid rgba(0,0,0,0.06); background:transparent; cursor:pointer }
 
-/* card */
-.card{
-  background:var(--card);
-  border-radius:12px;
-  padding:18px;
-  box-shadow:0 8px 28px var(--shadow);
-  transition: transform .18s ease, box-shadow .18s ease;
-}
-.card:hover{ transform:translateY(-6px)}
+    /* Header / Top bar in main content */
+    .main {
+      padding:18px;
+    }
+    .topbar {
+      display:flex; gap:12px; align-items:center; justify-content:space-between;
+      margin-bottom:18px;
+    }
+    .tabs {
+      display:flex; gap:8px; align-items:center; overflow:auto;
+    }
+    .tabs button {
+      padding:8px 12px; border-radius:10px; border:none; cursor:pointer; background:transparent; font-weight:700;
+    }
+    .tabs button.active {
+      background: linear-gradient(90deg,var(--accent-start),var(--accent-end));
+      color:white;
+      box-shadow: 0 6px 20px rgba(15,182,164,0.12);
+    }
 
-/* responsive spans */
-.span-4{grid-column:span 4}
-.span-6{grid-column:span 6}
-.span-12{grid-column:span 12}
-@media (max-width:900px){
-  .span-4,.span-6{grid-column:span 12}
-}
+    .utils { display:flex; gap:8px; align-items:center; }
 
-/* headings & forms */
-h1,h2{margin:0 0 10px 0}
-.small{color:var(--muted); font-size:13px}
-.input{width:100%; padding:10px 12px; border-radius:8px; border:1px solid #e6edf3; background:transparent; color:var(--text); margin-top:8px}
-:root.dark .input{border-color:#1e2a3a}
-.btn{
-  background:var(--secondary);
-  border:none;
-  color:white;
-  padding:10px 12px;
-  border-radius:10px;
-  cursor:pointer;
-  font-weight:700;
-  margin-top:12px;
-  display:inline-flex;
-  gap:8px; align-items:center;
-}
-.btn:hover{filter:brightness(.95); transform:translateY(-2px)}
+    /* content area */
+    .workspace {
+      display:grid;
+      grid-template-columns: 1fr 360px;
+      gap:18px;
+    }
+    @media (max-width:1100px){ .workspace{ grid-template-columns: 1fr } }
 
-/* result area */
-.result{
-  margin-top:12px;
-  font-weight:700;
-  color:var(--highlight);
-  font-size:1.05rem;
-}
+    /* left panel (calculators) */
+    .card {
+      background:var(--surface); border-radius:var(--card-radius); padding:16px;
+      box-shadow:0 8px 28px var(--shadow); transition: transform .15s;
+    }
+    .card h2 { margin:0 0 8px 0; font-size:16px }
+    .small { font-size:13px; color:var(--muted); margin-bottom:6px }
 
-/* charts area */
-.canvas-wrap{margin-top:12px; border-radius:8px; overflow:hidden; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.02)); padding:10px;}
-.canvas{width:100%; height:220px; display:block}
+    .input { width:100%; padding:10px 12px; border-radius:8px; border:1px solid #e6edf3; margin-top:8px; background:transparent; color:var(--text) }
+    :root.dark .input{ border-color:#1e2a3a }
+    .row{ display:flex; gap:10px; align-items:center; margin-top:10px }
+    .btn { padding:10px 12px; border-radius:10px; border:none; cursor:pointer; background:var(--accent-start); color:white; font-weight:700 }
+    .btn.ghost{ background:transparent; border:1px solid rgba(0,0,0,0.06); color:var(--text); font-weight:700; padding:8px 10px }
 
-/* footer explanations */
-.explain{
-  margin-top:18px;
-  font-size:14px;
-  color:var(--muted);
-  line-height:1.5;
-  background:linear-gradient(90deg, rgba(31,182,164,0.03), transparent);
-  padding:12px;
-  border-radius:8px;
-}
+    .result { font-weight:800; color:var(--accent-end); margin-left:8px }
 
-/* small helper */
-.row{display:flex; gap:10px; align-items:center}
-.kpi{padding:8px 12px; border-radius:8px; background:linear-gradient(90deg, rgba(0,0,0,0.02), rgba(255,255,255,0.02)); font-weight:700}
-.footer-note{font-size:13px; color:var(--muted); text-align:center; margin-top:20px; padding-bottom:20px}
-</style>
+    /* right analytics / simulator panel */
+    .panel { display:flex; flex-direction:column; gap:12px }
+    .kpi-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px }
+    .kpi { padding:12px; border-radius:10px; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.02)); font-weight:800; display:flex; flex-direction:column }
+    .kpi small { color:var(--muted); font-weight:600 }
+
+    .canvas-wrap { border-radius:8px; overflow:hidden; background:transparent; padding:8px; }
+    canvas { width:100%; height:180px; display:block; background:transparent; }
+
+    /* footer / notes */
+    .notes { font-size:13px; color:var(--muted); margin-top:16px; padding:12px; border-radius:8px; background:linear-gradient(90deg, rgba(15,182,164,0.03), transparent) }
+
+    /* modal */
+    #modalRoot{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:9999 }
+    #modalBg{ position:absolute; inset:0; background:rgba(0,0,0,0.45) }
+    #modalCard{ position:relative; background:var(--surface); padding:18px; border-radius:12px; width:420px; box-shadow:0 20px 60px rgba(0,0,0,0.25) }
+
+    /* responsive small screens */
+    @media (max-width:720px){
+      .sidebar{ display:none }
+      .app{ grid-template-columns: 1fr }
+      .workspace{ grid-template-columns:1fr }
+      canvas{ height:140px }
+      .tabs{ gap:6px }
+      .tabs button{ padding:8px 10px }
+    }
+
+    /* small utilities */
+    .chart-utils{ display:flex; gap:8px; justify-content:flex-end; align-items:center }
+    .muted-block{ color:var(--muted); font-size:13px }
+  </style>
 </head>
 <body>
 
-<!-- Header -->
-<header class="header">
-  <div class="brand">
-    <div class="logo">DF</div>
-    <div>
-      <div style="font-size:16px">DCF + Valuation Suite</div>
-      <div style="font-size:12px; color:rgba(255,255,255,0.85)">Tools · WACC · DGM · MSDDM · Charts</div>
-    </div>
-  </div>
+<div class="app" id="appRoot">
 
-  <div class="actions">
-    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">🌙 Dark</button>
-  </div>
-</header>
-
-<!-- Container -->
-<main class="container">
-  <div class="grid">
-
-    <!-- Left column calculators (stacked) -->
-    <div class="card span-6">
-      <h2>Cost of Debentures</h2>
-      <div class="small">(Interest / Net proceeds) × (1 − Tax)</div>
-      <input id="debInterest" class="input" placeholder="Annual Interest (₹)">
-      <input id="debNet" class="input" placeholder="Net proceeds received (₹)">
-      <input id="debTax" class="input" placeholder="Tax rate (%)">
-      <div class="row">
-        <button class="btn" onclick="calcDebenture()">Calculate</button>
-        <div id="debResult" class="result"></div>
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="logo">CF</div>
+      <div>
+        <h1>CorpFin Suite</h1>
+        <div class="muted">Valuation & Analytics</div>
       </div>
-      <div class="canvas-wrap">
-        <canvas id="debChart" class="canvas"></canvas>
-      </div>
-      <div class="explain">Cost of debentures measures the post-tax effective interest as percentage of funds received.</div>
     </div>
 
-    <div class="card span-6">
-      <h2>Cost of Equity (CAPM)</h2>
-      <div class="small">Re = Rf + β (Rm − Rf)</div>
-      <input id="capmRf" class="input" placeholder="Risk-free rate (%)">
-      <input id="capmBeta" class="input" placeholder="Beta (β)">
-      <input id="capmRm" class="input" placeholder="Market return (%)">
-      <div class="row">
-        <button class="btn" onclick="calcCAPM()">Calculate</button>
-        <div id="capmResult" class="result"></div>
+    <nav class="nav" id="mainNav">
+      <button class="active" data-target="tab-deb">Debenture</button>
+      <button data-target="tab-capm">CAPM</button>
+      <button data-target="tab-dgm">DGM</button>
+      <button data-target="tab-wacc">WACC</button>
+      <button data-target="tab-beta">Beta</button>
+      <button data-target="tab-msddm">MSDDM</button>
+      <button data-target="tab-analytics">Analytics</button>
+    </nav>
+
+    <div class="collapse">
+      <div class="muted">Autosave</div>
+      <div>
+        <button onclick="toggleTheme()" class="btn ghost" id="themeBtn">Theme</button>
       </div>
-      <div class="explain">CAPM builds cost of equity from market risk premium scaled by beta.</div>
     </div>
 
-    <!-- DGM and WACC -->
-    <div class="card span-6">
-      <h2>Cost of Equity — DGM</h2>
-      <div class="small">Re = (D1 / P0) + g</div>
-      <input id="dgmD1" class="input" placeholder="Next year dividend D1">
-      <input id="dgmP0" class="input" placeholder="Current price P0">
-      <input id="dgmG" class="input" placeholder="Growth rate g (%)">
-      <div class="row">
-        <button class="btn" onclick="calcDGM()">Calculate</button>
-        <div id="dgmResult" class="result"></div>
-      </div>
-      <div class="canvas-wrap">
-        <canvas id="dgmSensitivity" class="canvas"></canvas>
-      </div>
-      <div class="explain">DGM gives implied return assuming perpetual dividend growth.</div>
+    <div style="margin-top:18px" class="muted">Saved Projects</div>
+    <div style="display:flex; gap:8px; margin-top:8px;">
+      <button class="btn ghost" onclick="saveProjectPopup()">Save</button>
+      <button class="btn ghost" onclick="loadSavedProjects()">Load</button>
     </div>
 
-    <div class="card span-6">
-      <h2>WACC</h2>
-      <div class="small">(E/V)Re + (D/V)Rd(1−Tc)</div>
-      <input id="waccE" class="input" placeholder="Market value of equity (E)">
-      <input id="waccD" class="input" placeholder="Market value of debt (D)">
-      <input id="waccRe" class="input" placeholder="Cost of equity (%)">
-      <input id="waccRd" class="input" placeholder="Cost of debt (%)">
-      <input id="waccTax" class="input" placeholder="Tax rate (%)">
-      <div class="row">
-        <button class="btn" onclick="calcWACC()">Calculate</button>
-        <div id="waccResult" class="result"></div>
+    <div style="margin-top:18px" class="muted">Quick Export</div>
+    <div style="display:flex; gap:8px; margin-top:8px;">
+      <button class="btn ghost" onclick="generatePDFReport()">PDF</button>
+      <button class="btn ghost" onclick="openSavedList()">Saved</button>
+    </div>
+
+    <div style="margin-top:22px; font-size:13px; color:var(--muted)">Tip: Use Scenario Simulator (right) to run market-wide changes quickly.</div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="main">
+    <div class="topbar">
+      <div class="tabs" id="topTabs">
+        <button class="active" data-tab="tab-deb">Debenture</button>
+        <button data-tab="tab-capm">CAPM</button>
+        <button data-tab="tab-dgm">DGM</button>
+        <button data-tab="tab-wacc">WACC</button>
+        <button data-tab="tab-beta">Beta</button>
+        <button data-tab="tab-msddm">MSDDM</button>
+        <button data-tab="tab-analytics">Analytics</button>
       </div>
 
-      <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap">
-        <div style="flex:1">
-          <div class="canvas-wrap"><canvas id="waccPie" class="canvas" style="height:140px"></canvas></div>
+      <div class="utils">
+        <div class="muted-block" id="currentStatus">Ready</div>
+        <button class="btn ghost" onclick="downloadAllKeyCharts()">Download Charts</button>
+        <button class="btn" onclick="generatePDFReport()">Export PDF</button>
+      </div>
+    </div>
+
+    <section class="workspace">
+
+      <!-- Left central area: content panels (tabbed) -->
+      <div>
+
+        <!-- Debenture -->
+        <div class="card tab-panel" id="tab-deb" style="display:block">
+          <h2>Cost of Debentures</h2>
+          <div class="small">(Interest / Net proceeds) × (1 − Tax)</div>
+          <input id="debInterest" class="input" placeholder="Annual Interest (₹)">
+          <input id="debNet" class="input" placeholder="Net proceeds received (₹)">
+          <input id="debTax" class="input" placeholder="Tax rate (%)">
+          <div class="row">
+            <button class="btn" onclick="calcDebenture()">Calculate</button>
+            <div id="debResult" class="result"></div>
+            <div style="margin-left:auto" class="chart-utils">
+              <button class="btn ghost" onclick="downloadCanvasAsPNG('debChart','deb-chart.png')">PNG</button>
+            </div>
+          </div>
+          <div class="canvas-wrap">
+            <canvas id="debChart"></canvas>
+          </div>
+          <div class="notes">Measures the effective interest cost of debentures after tax. Useful in WACC.</div>
         </div>
-        <div style="flex:1">
-          <div class="canvas-wrap"><canvas id="waccBar" class="canvas" style="height:140px"></canvas></div>
+
+        <!-- CAPM -->
+        <div class="card tab-panel" id="tab-capm" style="display:none">
+          <h2>Cost of Equity — CAPM</h2>
+          <div class="small">Re = Rf + β (Rm − Rf)</div>
+          <input id="capmRf" class="input" placeholder="Risk-free rate (%)">
+          <input id="capmBeta" class="input" placeholder="Beta (β)">
+          <input id="capmRm" class="input" placeholder="Market return (%)">
+          <div class="row">
+            <button class="btn" onclick="calcCAPM()">Calculate</button>
+            <div id="capmResult" class="result"></div>
+          </div>
+          <div class="notes">CAPM is a market-based estimate of required return, sensitive to beta and market premium.</div>
+        </div>
+
+        <!-- DGM -->
+        <div class="card tab-panel" id="tab-dgm" style="display:none">
+          <h2>Cost of Equity — DGM</h2>
+          <div class="small">Re = (D1 / P0) + g</div>
+          <input id="dgmD1" class="input" placeholder="Next year dividend D1">
+          <input id="dgmP0" class="input" placeholder="Current price P0">
+          <input id="dgmG" class="input" placeholder="Growth rate g (%)">
+          <div class="row">
+            <button class="btn" onclick="calcDGM()">Calculate</button>
+            <div id="dgmResult" class="result"></div>
+            <div style="margin-left:auto" class="chart-utils">
+              <button class="btn ghost" onclick="downloadCanvasAsPNG('dgmSensitivity','dgm-sensitivity.png')">PNG</button>
+            </div>
+          </div>
+          <div class="canvas-wrap">
+            <canvas id="dgmSensitivity"></canvas>
+          </div>
+          <div class="notes">Gordon model useful for stable dividend-paying firms. Watch r > g.</div>
+        </div>
+
+        <!-- WACC -->
+        <div class="card tab-panel" id="tab-wacc" style="display:none">
+          <h2>WACC</h2>
+          <div class="small">(E/V)Re + (D/V)Rd(1−Tc)</div>
+          <input id="waccE" class="input" placeholder="Market value of equity (E)">
+          <input id="waccD" class="input" placeholder="Market value of debt (D)">
+          <input id="waccRe" class="input" placeholder="Cost of equity (%)">
+          <input id="waccRd" class="input" placeholder="Cost of debt (%)">
+          <input id="waccTax" class="input" placeholder="Tax rate (%)">
+          <div class="row">
+            <button class="btn" onclick="calcWACC()">Calculate</button>
+            <div id="waccResult" class="result"></div>
+            <div style="margin-left:auto" class="chart-utils">
+              <button class="btn ghost" onclick="downloadCanvasAsPNG('waccPie','wacc-pie.png')">Pie</button>
+              <button class="btn ghost" onclick="downloadCanvasAsPNG('waccBar','wacc-bar.png')">Bar</button>
+            </div>
+          </div>
+          <div style="display:flex; gap:10px; margin-top:12px; flex-wrap:wrap">
+            <div style="flex:1" class="canvas-wrap"><canvas id="waccPie" style="height:160px"></canvas></div>
+            <div style="flex:1" class="canvas-wrap"><canvas id="waccBar" style="height:160px"></canvas></div>
+          </div>
+          <div class="notes">Use market values (not book values). Tax shield reduces effective cost of debt.</div>
+        </div>
+
+        <!-- Beta -->
+        <div class="card tab-panel" id="tab-beta" style="display:none">
+          <h2>Beta</h2>
+          <div class="small">β = Cov(Ri, Rm) / Var(Rm)</div>
+          <input id="betaCov" class="input" placeholder="Covariance with market (decimal)">
+          <input id="betaVar" class="input" placeholder="Variance of market (decimal)">
+          <div class="row">
+            <button class="btn" onclick="calcBeta()">Calculate</button>
+            <div id="betaResult" class="result"></div>
+          </div>
+          <div class="notes">Beta measures systematic risk. Use regression over returns for precise estimate.</div>
+        </div>
+
+        <!-- MSDDM -->
+        <div class="card tab-panel" id="tab-msddm" style="display:none">
+          <h2>Multi-stage DDM</h2>
+          <div class="small">High growth for N years, then stable growth</div>
+          <input id="msD0" class="input" placeholder="Current dividend D0">
+          <input id="msG1" class="input" placeholder="High growth rate g1 (%)">
+          <input id="msYears" class="input" placeholder="Years of high growth (N)">
+          <input id="msG2" class="input" placeholder="Stable growth g2 (%)">
+          <input id="msR" class="input" placeholder="Required return r (%)">
+          <div class="row">
+            <button class="btn" onclick="calcMSDDM()">Calculate</button>
+            <div id="msResult" class="result"></div>
+            <div style="margin-left:auto" class="chart-utils">
+              <button class="btn ghost" onclick="downloadCanvasAsPNG('msChart','ms-chart.png')">PNG</button>
+            </div>
+          </div>
+          <div class="canvas-wrap"><canvas id="msChart"></canvas></div>
+          <div class="notes">Terminal value: D_{n+1}/(r-g). Ensure r > g2 for a valid terminal.</div>
+        </div>
+
+        <!-- Analytics overview -->
+        <div class="card tab-panel" id="tab-analytics" style="display:none">
+          <h2>Analytics Dashboard</h2>
+          <div class="kpi-grid">
+            <div class="kpi">
+              <div style="font-size:18px" id="kpi-wacc">WACC — --%</div>
+              <small>Weighted average cost of capital</small>
+            </div>
+            <div class="kpi">
+              <div style="font-size:18px" id="kpi-capm">CAPM — --%</div>
+              <small>Cost of equity (market)</small>
+            </div>
+            <div class="kpi">
+              <div style="font-size:18px" id="kpi-dgm">DGM — --%</div>
+              <small>Implied cost (dividend model)</small>
+            </div>
+            <div class="kpi">
+              <div style="font-size:18px" id="kpi-intrinsic">Intrinsic — ₹--</div>
+              <small>MSDDM intrinsic value</small>
+            </div>
+          </div>
+
+          <div style="margin-top:12px" class="canvas-wrap">
+            <canvas id="analyticsChart"></canvas>
+          </div>
+
+          <div class="notes">Analytics snapshot pulls from current inputs. Use scenario presets to compare outputs quickly.</div>
         </div>
       </div>
 
-      <div class="explain">WACC blends equity and debt costs weighted by market values; tax shields lower effective debt cost.</div>
-    </div>
+      <!-- Right column: Simulator + utilities -->
+      <aside class="panel">
 
-    <!-- Beta + MSDDM -->
-    <div class="card span-6">
-      <h2>Beta</h2>
-      <div class="small">β = Cov(Ri, Rm) / Var(Rm)</div>
-      <input id="betaCov" class="input" placeholder="Covariance with market (decimal)">
-      <input id="betaVar" class="input" placeholder="Variance of market (decimal)">
-      <div class="row">
-        <button class="btn" onclick="calcBeta()">Calculate</button>
-        <div id="betaResult" class="result"></div>
-      </div>
-      <div class="explain">Beta measures systematic risk; useful in CAPM to translate market premium to expected return.</div>
-    </div>
+        <div class="card">
+          <h2>Scenario Simulator</h2>
+          <div class="small">Change system-wide levers and watch calculators update.</div>
 
-    <div class="card span-6">
-      <h2>Multi-Stage DDM (2-stage)</h2>
-      <div class="small">High growth for N years, then stable growth</div>
-      <input id="msD0" class="input" placeholder="Current dividend D0">
-      <input id="msG1" class="input" placeholder="High growth rate g1 (%)">
-      <input id="msYears" class="input" placeholder="Years of high growth (N)">
-      <input id="msG2" class="input" placeholder="Stable growth g2 (%)">
-      <input id="msR" class="input" placeholder="Required return r (%)">
-      <div class="row">
-        <button class="btn" onclick="calcMSDDM()">Calculate</button>
-        <div id="msResult" class="result"></div>
-      </div>
-      <div class="canvas-wrap">
-        <canvas id="msChart" class="canvas"></canvas>
-      </div>
-      <div class="explain">Multi-stage DDM projects dividends in a high-growth phase then discounts a terminal value using Gordon's method.</div>
-    </div>
+          <div style="margin-top:8px">
+            <label class="small">Risk-free rate (Rf %)</label>
+            <div class="row"><input type="range" id="simRf" min="0" max="20" step="0.1" value="6" oninput="applyScenarioFromSliders()"><input id="simRfTxt" class="input" style="width:90px" value="6" oninput="syncSlider('simRf','simRfTxt')"></div>
+          </div>
 
-    <!-- footer note -->
-    <div class="card span-12">
-      <h2>Notes & Quick Formulas</h2>
-      <div class="explain">
-        <strong>How values are projected:</strong> For MSDDM, dividends grow each year by the high growth rate then transition to stable growth. Terminal value uses Gordon formula: TV = D_{n+1} / (r − g).<br><br>
-        <strong>How discounting works:</strong> Present value = Σ_{t=1..n} cash_t / (1+r)^t. Use WACC or required return as r depending on cashflow owner.<br><br>
-        <strong>Sensitivity:</strong> Use DGM sensitivity grid to see how small changes in growth or required return affect value-per-share. Always check r > g to avoid invalid terminal formulas.
-      </div>
-      <div class="footer-note">Built local — graphs are custom-drawn with Canvas. Theme toggles saved to localStorage.</div>
-    </div>
+          <div style="margin-top:8px">
+            <label class="small">Market return (Rm %)</label>
+            <div class="row"><input type="range" id="simRm" min="0" max="25" step="0.1" value="12" oninput="applyScenarioFromSliders()"><input id="simRmTxt" class="input" style="width:90px" value="12" oninput="syncSlider('simRm','simRmTxt')"></div>
+          </div>
 
+          <div style="margin-top:8px">
+            <label class="small">Market Beta multiplier (β)</label>
+            <div class="row"><input type="range" id="simBeta" min="0" max="3" step="0.01" value="1" oninput="applyScenarioFromSliders()"><input id="simBetaTxt" class="input" style="width:90px" value="1" oninput="syncSlider('simBeta','simBetaTxt')"></div>
+          </div>
+
+          <div style="margin-top:8px">
+            <label class="small">DGM growth g (%)</label>
+            <div class="row"><input type="range" id="simG" min="-5" max="20" step="0.1" value="5" oninput="applyScenarioFromSliders()"><input id="simGTxt" class="input" style="width:90px" value="5" oninput="syncSlider('simG','simGTxt')"></div>
+          </div>
+
+          <div style="display:flex; gap:8px; margin-top:12px">
+            <button class="btn" onclick="applyScenarioPreset('bull')">Bull</button>
+            <button class="btn" onclick="applyScenarioPreset('base')">Base</button>
+            <button class="btn" onclick="applyScenarioPreset('bear')">Bear</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Quick Utilities</h2>
+          <div style="display:flex; gap:8px; margin-top:8px">
+            <button class="btn" onclick="saveProjectPopup()">Save Project</button>
+            <button class="btn ghost" onclick="loadSavedProjects()">Load</button>
+          </div>
+          <div style="margin-top:10px" class="chart-utils">
+            <button class="btn ghost" onclick="downloadAllKeyCharts()">Download Charts</button>
+            <button class="btn" onclick="generatePDFReport()">Generate Report</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Session</h2>
+          <div class="small">Autosave on unload; last session restores automatically.</div>
+          <div style="margin-top:8px" class="muted-block">Status: <span id="statusBadge">Ready</span></div>
+          <div style="margin-top:8px">
+            <button class="btn ghost" onclick="clearAllInputs()">Clear Inputs</button>
+          </div>
+        </div>
+
+      </aside>
+
+    </section>
+  </main>
+</div>
+
+<!-- Modal for simple prompts -->
+<div id="modalRoot">
+  <div id="modalBg"></div>
+  <div id="modalCard">
+    <div id="modalContent"></div>
+    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px">
+      <button class="btn ghost" onclick="closeModal()">Close</button>
+    </div>
   </div>
-</main>
+</div>
 
+<!-- ---------------- Scripts ---------------- -->
 <script>
-/* ===== Theme management ===== */
-const themeToggle = document.getElementById('themeToggle');
-function applyThemeFromStorage() {
+/* ===== Theme toggle (simple) ===== */
+const themeBtn = document.getElementById('themeBtn');
+function applyThemeFromStorage(){
   const t = localStorage.getItem('theme');
-  if (t === 'dark') {
-    document.documentElement.classList.add('dark');
-    themeToggle.textContent = '☀️ Light';
-  } else {
-    document.documentElement.classList.remove('dark');
-    themeToggle.textContent = '🌙 Dark';
-  }
+  if (t === 'dark'){ document.documentElement.classList.add('dark'); themeBtn.textContent = 'Light' } else { document.documentElement.classList.remove('dark'); themeBtn.textContent = 'Dark' }
 }
 function toggleTheme(){
   const isDark = document.documentElement.classList.toggle('dark');
   localStorage.setItem('theme', isDark ? 'dark' : 'light');
-  themeToggle.textContent = isDark ? '☀️ Light' : '🌙 Dark';
+  themeBtn.textContent = isDark ? 'Light' : 'Dark';
 }
 applyThemeFromStorage();
 
-/* ===== Utilities ===== */
+/* ===== Basic helpers (preserve original logic style) ===== */
 function n(v){ v = parseFloat(v); return isNaN(v) ? 0 : v; }
-function formatPct(x){ return (x).toFixed(2) + '%'; }
 function clearCanvas(c){ const ctx = c.getContext('2d'); ctx.clearRect(0,0,c.width,c.height); }
+function resizeCanvasForDevice(c){
+  if (!c) return;
+  const ratio = window.devicePixelRatio || 1;
+  const rect = c.getBoundingClientRect();
+  c.width = Math.max(300, Math.floor(rect.width * ratio));
+  c.height = Math.max(120, Math.floor((rect.height || 180) * ratio));
+}
 
-/* ===== Debenture ===== */
+/* --------------- Tab & Sidebar logic --------------- */
+document.querySelectorAll('#mainNav button').forEach(b=>{
+  b.addEventListener('click', ()=> {
+    document.querySelectorAll('#mainNav button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    const target = b.getAttribute('data-target');
+    activateTab(target);
+  });
+});
+document.querySelectorAll('#topTabs button').forEach(b=>{
+  b.addEventListener('click', ()=> {
+    document.querySelectorAll('#topTabs button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    const tab = b.getAttribute('data-tab');
+    activateTab(tab);
+  });
+});
+function activateTab(tabId){
+  document.querySelectorAll('.tab-panel').forEach(p=> p.style.display = 'none');
+  const el = document.getElementById(tabId);
+  if (el) el.style.display = 'block';
+  // sync sidebar active if exists
+  const sideBtn = Array.from(document.querySelectorAll('#mainNav button')).find(x=> x.getAttribute('data-target') === tabId);
+  if (sideBtn){
+    document.querySelectorAll('#mainNav button').forEach(x=>x.classList.remove('active'));
+    sideBtn.classList.add('active');
+  }
+}
+
+/* --------------- Original calculation functions (kept intact) --------------- */
+
+/* Debenture */
 function calcDebenture(){
-  const I = n(debInterest.value), NP = n(debNet.value), T = n(debTax.value)/100;
+  const I = n(document.getElementById('debInterest').value),
+        NP = n(document.getElementById('debNet').value),
+        T = n(document.getElementById('debTax').value)/100;
+  const debResult = document.getElementById('debResult');
   if (NP <= 0){ debResult.textContent = 'Net proceeds must be > 0'; drawDebChart(0,0); return; }
   const kd = (I/NP) * (1 - T) * 100;
   debResult.textContent = 'Cost of Debentures: ' + kd.toFixed(2) + '%';
   drawDebChart(kd, (I/NP)*100);
 }
 function drawDebChart(kd, grossPct){
-  const c = document.getElementById('debChart');
-  resizeCanvasForDevice(c);
-  const ctx = c.getContext('2d');
-  clearCanvas(c);
-  const w=c.width,h=c.height; const pad=28;
-  // simple horizontal bar showing gross vs net effect
+  const c = document.getElementById('debChart'); resizeCanvasForDevice(c);
+  const ctx = c.getContext('2d'); clearCanvas(c);
+  const w=c.width, h=c.height, pad=26;
   const barW = w - pad*2;
   ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted') || '#999';
   ctx.fillRect(pad, h/2 - 18, barW, 36);
-  ctx.fillStyle = 'rgba(31,182,164,0.85)';
+  ctx.fillStyle = 'rgba(15,182,164,0.95)';
   ctx.fillRect(pad, h/2 - 18, Math.max(0, Math.min(barW, barW * (grossPct/100))), 36);
   ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text');
-  ctx.font = '13px Inter, Arial';
-  ctx.fillText('Gross interest % (approx): ' + grossPct.toFixed(2) + '%', pad, h/2 - 26);
-  ctx.fillText('Post-tax cost (kd): ' + kd.toFixed(2) + '%', pad, h/2 + 48);
+  ctx.font = Math.max(12, Math.round(h*0.04)) + 'px Inter, Arial';
+  ctx.fillText('Gross interest %: ' + grossPct.toFixed(2) + '%', pad, h/2 - 26);
+  ctx.fillText('Post-tax kd: ' + kd.toFixed(2) + '%', pad, h/2 + 48);
 }
 
-/* ===== CAPM ===== */
+/* CAPM */
 function calcCAPM(){
-  const Rf = n(capmRf.value), Beta = n(capmBeta.value), Rm = n(capmRm.value);
+  const Rf = n(document.getElementById('capmRf').value),
+        Beta = n(document.getElementById('capmBeta').value),
+        Rm = n(document.getElementById('capmRm').value);
   const Re = Rf + Beta * (Rm - Rf);
-  capmResult.textContent = 'Cost of Equity (CAPM): ' + Re.toFixed(2) + '%';
+  document.getElementById('capmResult').textContent = 'Cost of Equity (CAPM): ' + Re.toFixed(2) + '%';
+  // update KPI
+  document.getElementById('kpi-capm').textContent = 'CAPM — ' + Re.toFixed(2) + '%';
 }
 
-/* ===== DGM & sensitivity grid ===== */
+/* DGM */
 function calcDGM(){
-  const D1=n(dgmD1.value), P0=n(dgmP0.value), g=n(dgmG.value)/100;
+  const D1=n(document.getElementById('dgmD1').value),
+        P0=n(document.getElementById('dgmP0').value),
+        g=n(document.getElementById('dgmG').value)/100;
+  const dgmResult = document.getElementById('dgmResult');
   if (P0 <= 0){ dgmResult.textContent='Price must be > 0'; drawDgmSensitivity(0,0); return; }
   const Re = (D1/P0 + g) * 100;
   dgmResult.textContent = 'Cost of Equity (DGM): ' + Re.toFixed(2) + '%';
+  document.getElementById('kpi-dgm').textContent = 'DGM — ' + Re.toFixed(2) + '%';
   drawDgmSensitivity(D1, P0);
 }
-
-/* Draw sensitivity: rows = growth [g-0.5% to g+0.5%], cols = required return [r-1% to r+1%] */
 function drawDgmSensitivity(D1,P0){
   const canvas = document.getElementById('dgmSensitivity'); resizeCanvasForDevice(canvas);
   const ctx = canvas.getContext('2d'); clearCanvas(canvas);
   const W = canvas.width, H = canvas.height, pad=28;
   if (P0===0){ ctx.fillStyle='#888'; ctx.fillText('No data', pad, pad); return; }
-  // center growth and r from computed DGM or defaults
-  const baseG = n(dgmG.value)/100 || 0.05;
+  const baseG = n(document.getElementById('dgmG').value)/100 || 0.05;
   const centerR = ((D1/P0)+baseG) || 0.12;
   const rows=8, cols=10;
   const cellW=(W - pad*2)/cols, cellH=(H - pad*2)/rows;
-  // compute values and find min/max to map color
   let vals=[]; let min=1e9, max=-1e9;
   for (let i=0;i<rows;i++){
-    let gg = baseG - 0.01 + (i*(0.02/(rows-1))); // +/-1%
+    let gg = baseG - 0.01 + (i*(0.02/(rows-1)));
     for (let j=0;j<cols;j++){
-      let rr = centerR - 0.02 + (j*(0.04/(cols-1))); // +/-2%
-      let val = (D1/P0 + gg) / rr; // value in terms of multiple; higher = better
+      let rr = centerR - 0.02 + (j*(0.04/(cols-1)));
+      let val = (D1/P0 + gg) / rr;
       vals.push({i,j,val,gg,rr});
       if (val<min) min=val; if (val>max) max=val;
     }
   }
-  // draw grid
   for (const cell of vals){
     const x = pad + cell.j*cellW, y = pad + cell.i*cellH;
     const norm = (cell.val - min) / (max - min || 1);
@@ -400,73 +588,69 @@ function drawDgmSensitivity(D1,P0){
     ctx.fillStyle = `rgb(${rCol},${gCol},${bCol})`;
     ctx.fillRect(x,y, cellW-2, cellH-2);
   }
-  // overlay text
   ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text');
   ctx.font='12px Inter';
-  ctx.fillText('DGM sensitivity (color = relative value). Rows: g; Cols: r', pad, 16);
+  ctx.fillText('DGM sensitivity (rows: g; cols: r)', pad, 16);
 }
 
-/* ===== WACC charts ===== */
+/* WACC */
 function calcWACC(){
-  const E=n(waccE.value), D=n(waccD.value), Re=n(waccRe.value)/100, Rd=n(waccRd.value)/100, T=n(waccTax.value)/100;
+  const E=n(document.getElementById('waccE').value),
+        D=n(document.getElementById('waccD').value),
+        Re=n(document.getElementById('waccRe').value)/100,
+        Rd=n(document.getElementById('waccRd').value)/100,
+        T=n(document.getElementById('waccTax').value)/100;
   const V=E + D;
-  if (V <= 0){ waccResult.textContent='E+D must be > 0'; drawWaccPie(0,0); drawWaccBar(0,0); return; }
+  if (V <= 0){ document.getElementById('waccResult').textContent='E+D must be > 0'; drawWaccPie(0,0); drawWaccBar(0,0); return; }
   const wE = E/V, wD = D/V;
   const wacc = (wE * Re) + (wD * Rd * (1-T));
-  waccResult.textContent = 'WACC: ' + (wacc*100).toFixed(2) + '%';
-  // draw charts
+  document.getElementById('waccResult').textContent = 'WACC: ' + (wacc*100).toFixed(2) + '%';
+  document.getElementById('kpi-wacc').textContent = 'WACC — ' + (wacc*100).toFixed(2) + '%';
   drawWaccPie(wE,wD);
   drawWaccBar(wE,wD, Re, Rd, T);
 }
-
 function drawWaccPie(wE,wD){
   const canvas=document.getElementById('waccPie'); resizeCanvasForDevice(canvas);
   const ctx=canvas.getContext('2d'); clearCanvas(canvas);
   const cx=canvas.width/2, cy=canvas.height/2, r=Math.min(cx,cy)-12;
-  // background ring
-  ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--card');
-  ctx.beginPath(); ctx.arc(cx,cy,r+10,0,Math.PI*2); ctx.fill();
-  // draw slices
   const start= -Math.PI/2;
   const aE = wE*2*Math.PI;
-  ctx.beginPath(); ctx.moveTo(cx,cy); ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--secondary'); ctx.arc(cx,cy,r,start,start+aE); ctx.closePath(); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(cx,cy); ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--primary'); ctx.arc(cx,cy,r,start+aE,start+2*Math.PI); ctx.closePath(); ctx.fill();
-  // labels
+  ctx.beginPath(); ctx.moveTo(cx,cy); ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--accent-start'); ctx.arc(cx,cy,r,start,start+aE); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(cx,cy); ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--accent-end'); ctx.arc(cx,cy,r,start+aE,start+2*Math.PI); ctx.closePath(); ctx.fill();
   ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--text');
   ctx.font='13px Inter';
   ctx.fillText('Equity ' + (wE*100).toFixed(1)+'%', 12, 18);
   ctx.fillText('Debt  ' + (wD*100).toFixed(1)+'%', 12, 36);
 }
-
 function drawWaccBar(wE,wD, Re=0, Rd=0, T=0){
   const canvas=document.getElementById('waccBar'); resizeCanvasForDevice(canvas);
   const ctx=canvas.getContext('2d'); clearCanvas(canvas);
   const W=canvas.width, H=canvas.height, pad=32;
-  // bars for component costs: equity contribution and debt contribution (post-tax)
   const eqContribution = wE * Re * 100;
   const debtContribution = wD * Rd * (1-T) * 100;
   const max = Math.max(eqContribution, debtContribution, 0.1);
-  // draw axes
   ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--muted') || '#777';
   ctx.font='12px Inter';
   ctx.fillText('Component contributions (%)', pad, 16);
   const barW = (W - pad*2)/2 - 10;
-  // equity bar
-  ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--secondary');
+  ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--accent-start');
   ctx.fillRect(pad, 36, Math.max(2, (eqContribution/max)*(barW)), 28);
   ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--text');
   ctx.fillText('Equity: ' + eqContribution.toFixed(2)+'%', pad, 76);
-  // debt bar
-  ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--primary');
+  ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--accent-end');
   ctx.fillRect(pad + barW + 30, 36, Math.max(2, (debtContribution/max)*(barW)), 28);
   ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--text');
   ctx.fillText('Debt (post-tax): ' + debtContribution.toFixed(2)+'%', pad + barW + 30, 76);
 }
 
-/* ===== Multi-stage DDM chart ===== */
+/* Multi-stage DDM */
 function calcMSDDM(){
-  const D0 = n(msD0.value), g1 = n(msG1.value)/100, nYears = Math.max(0, Math.floor(n(msYears.value))), g2 = n(msG2.value)/100, r = n(msR.value)/100;
-  if (r <= g2){ msResult.textContent = 'Required return must be > stable growth'; drawMsChart([],0,0); return; }
+  const D0 = n(document.getElementById('msD0').value),
+        g1 = n(document.getElementById('msG1').value)/100,
+        nYears = Math.max(0, Math.floor(n(document.getElementById('msYears').value))),
+        g2 = n(document.getElementById('msG2').value)/100,
+        r = n(document.getElementById('msR').value)/100;
+  if (r <= g2){ document.getElementById('msResult').textContent = 'Required return must be > stable growth'; drawMsChart([],0,0); return; }
   let pv = 0; let D = D0;
   const series = [];
   for (let t=1; t<=nYears; t++){
@@ -474,72 +658,304 @@ function calcMSDDM(){
     series.push({t, D});
     pv += D / Math.pow(1+r, t);
   }
-  // terminal
   const terminal = (D * (1 + g2)) / (r - g2);
   series.push({t: nYears + 1, D: terminal, terminal: true});
   pv += terminal / Math.pow(1+r, nYears);
-  msResult.textContent = 'Intrinsic Value: ₹' + pv.toFixed(2);
+  document.getElementById('msResult').textContent = 'Intrinsic Value: ₹' + pv.toFixed(2);
+  document.getElementById('kpi-intrinsic').textContent = 'Intrinsic — ₹' + pv.toFixed(2);
   drawMsChart(series, r, nYears);
 }
-
 function drawMsChart(series, r, nYears){
   const canvas = document.getElementById('msChart'); resizeCanvasForDevice(canvas);
   const ctx = canvas.getContext('2d'); clearCanvas(canvas);
   const W = canvas.width, H = canvas.height, pad=40;
   if (!series || series.length === 0){ ctx.fillStyle='#888'; ctx.fillText('No data', pad, pad); return; }
-  // compute max
   const max = Math.max(...series.map(s=>s.D));
-  // axes
   ctx.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue('--muted'); ctx.lineWidth=1;
-  ctx.beginPath(); ctx.moveTo(pad, H-pad); ctx.lineTo(W-pad, H-pad); ctx.stroke(); // x-axis
-  ctx.beginPath(); ctx.moveTo(pad, pad); ctx.lineTo(pad, H-pad); ctx.stroke(); // y-axis
+  ctx.beginPath(); ctx.moveTo(pad, H-pad); ctx.lineTo(W-pad, H-pad); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(pad, pad); ctx.lineTo(pad, H-pad); ctx.stroke();
   ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--text'); ctx.font='12px Inter';
-  // points
   const n = series.length;
   for (let i=0;i<n;i++){
     const x = pad + (i/(n-1))*(W - pad*2);
     const y = H - pad - (series[i].D / max) * (H - pad*2);
-    // draw line to next
     if (i < n-1){
       const x2 = pad + ((i+1)/(n-1))*(W - pad*2);
       const y2 = H - pad - (series[i+1].D / max)*(H-pad*2);
-      ctx.strokeStyle = 'rgba(31,182,164,0.9)'; ctx.lineWidth=2;
+      ctx.strokeStyle = 'rgba(15,182,164,0.9)'; ctx.lineWidth=2;
       ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x2,y2); ctx.stroke();
     }
-    // point
-    ctx.fillStyle = series[i].terminal ? getComputedStyle(document.documentElement).getPropertyValue('--highlight') : getComputedStyle(document.documentElement).getPropertyValue('--secondary');
+    ctx.fillStyle = series[i].terminal ? getComputedStyle(document.documentElement).getPropertyValue('--accent-end') : getComputedStyle(document.documentElement).getPropertyValue('--accent-start');
     ctx.beginPath(); ctx.arc(x,y,4,0,Math.PI*2); ctx.fill();
     ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text');
     ctx.fillText(series[i].terminal ? 'Terminal' : 'Year '+series[i].t, x-18, y-10);
   }
 }
 
-/* ===== Beta ===== */
+/* Beta */
 function calcBeta(){
-  const cov = n(betaCov.value), v = n(betaVar.value);
-  if (v === 0){ betaResult.textContent = 'Variance cannot be zero'; return; }
-  betaResult.textContent = 'Beta: ' + (cov / v).toFixed(3);
+  const cov = n(document.getElementById('betaCov').value),
+        v = n(document.getElementById('betaVar').value);
+  if (v === 0){ document.getElementById('betaResult').textContent = 'Variance cannot be zero'; return; }
+  document.getElementById('betaResult').textContent = 'Beta: ' + (cov / v).toFixed(3);
 }
 
-/* ===== Helpers: responsive canvas resizing ===== */
-function resizeCanvasForDevice(c){
-  if (!c) return;
-  const ratio = window.devicePixelRatio || 1;
-  const rect = c.getBoundingClientRect();
-  c.width = Math.max(300, Math.floor(rect.width * ratio));
-  c.height = Math.max(120, Math.floor(rect.height * ratio));
-}
-
-/* ===== initialize small default canvas sizes on load ===== */
+/* --------------- Init canvases with defaults --------------- */
 function initAll(){
-  const canvases = document.querySelectorAll('canvas');
-  canvases.forEach(c=> resizeCanvasForDevice(c));
-  // initial draw placeholders
+  document.querySelectorAll('canvas').forEach(c=> resizeCanvasForDevice(c));
   drawDebChart(0,0); drawWaccPie(0.6,0.4); drawWaccBar(0.6,0.4,0.12,0.06,0.25);
   drawDgmSensitivity(1,1); drawMsChart([{t:1,D:1},{t:2,D:1.2},{t:3,D:1.5}],0.12,2);
+  drawAnalyticsChart();
 }
-window.addEventListener('resize',()=>{ document.querySelectorAll('canvas').forEach(c=> resizeCanvasForDevice(c)); initAll(); });
+window.addEventListener('resize', ()=> { document.querySelectorAll('canvas').forEach(c=> resizeCanvasForDevice(c)); initAll(); });
 initAll();
+
+/* --------------- Exports: PNG & Multi-download --------------- */
+function downloadCanvasAsPNG(canvasId, filename){
+  const c = document.getElementById(canvasId);
+  resizeCanvasForDevice(c);
+  const dataURL = c.toDataURL('image/png');
+  const link = document.createElement('a');
+  link.href = dataURL;
+  link.download = filename || (canvasId + '.png');
+  link.click();
+}
+function downloadAllKeyCharts(){
+  const list = ['debChart','waccPie','waccBar','dgmSensitivity','msChart'];
+  list.forEach((id, i)=> setTimeout(()=> downloadCanvasAsPNG(id, id+'.png'), i*250));
+}
+
+/* --------------- Save / Load engine (localStorage) --------------- */
+const SAVES_KEY = 'cf_suite_saves_v1';
+function collectAllInputs(){
+  const ids = ['debInterest','debNet','debTax','capmRf','capmBeta','capmRm','dgmD1','dgmP0','dgmG','waccE','waccD','waccRe','waccRd','waccTax','betaCov','betaVar','msD0','msG1','msYears','msG2','msR'];
+  const out = {};
+  ids.forEach(id=> { const el = document.getElementById(id); if (el) out[id] = el.value; });
+  return out;
+}
+function saveProjectPopup(){
+  const name = prompt('Project name to save:');
+  if (!name) return;
+  saveCurrentProject(name);
+  alert('Saved: ' + name);
+}
+function saveCurrentProject(name){
+  const store = JSON.parse(localStorage.getItem(SAVES_KEY) || '{}');
+  store[name] = collectAllInputs();
+  localStorage.setItem(SAVES_KEY, JSON.stringify(store));
+}
+function loadSavedProjects(){
+  const store = JSON.parse(localStorage.getItem(SAVES_KEY) || '{}');
+  const keys = Object.keys(store);
+  if (!keys.length){ alert('No saved projects'); return; }
+  const choice = prompt('Saved projects:\\n' + keys.map((k,i)=> (i+1)+'. '+k).join('\\n') + '\\n\\nEnter number to load:');
+  const idx = parseInt(choice)-1;
+  if (isNaN(idx) || idx < 0 || idx >= keys.length) return;
+  applyInputsToPage(store[keys[idx]]);
+  alert('Loaded: ' + keys[idx]);
+}
+function openSavedList(){
+  const store = JSON.parse(localStorage.getItem(SAVES_KEY) || '{}');
+  const keys = Object.keys(store);
+  if (!keys.length){ alert('No saved projects'); return; }
+  alert('Saved projects:\\n' + keys.map((k,i)=> (i+1)+'. '+k).join('\\n'));
+}
+function applyInputsToPage(obj){
+  if (!obj) return;
+  for (const k in obj){
+    const el = document.getElementById(k);
+    if (el) el.value = obj[k];
+  }
+  // recalc
+  calcDebenture(); calcCAPM(); calcDGM(); calcWACC(); calcMSDDM(); calcBeta(); updateAnalytics();
+}
+
+/* --------------- Clear inputs & autosave --------------- */
+function clearAllInputs(){
+  if (!confirm('Clear all inputs?')) return;
+  document.querySelectorAll('input').forEach(i => { if (i.type !== 'range') i.value = '' });
+  // reset sliders
+  document.getElementById('simRf').value = 6; document.getElementById('simRfTxt').value = 6;
+  document.getElementById('simRm').value = 12; document.getElementById('simRmTxt').value = 12;
+  document.getElementById('simBeta').value = 1; document.getElementById('simBetaTxt').value = 1;
+  document.getElementById('simG').value = 5; document.getElementById('simGTxt').value = 5;
+  initAll();
+}
+function saveStateToLocalAuto(){
+  const last = collectAllInputs();
+  localStorage.setItem('cf_last_session_v1', JSON.stringify(last));
+}
+window.addEventListener('beforeunload', saveStateToLocalAuto);
+(function tryLoadLast(){
+  const last = JSON.parse(localStorage.getItem('cf_last_session_v1') || 'null');
+  if (last){
+    const anyFilled = Array.from(document.querySelectorAll('input')).some(i=> i.value);
+    if (!anyFilled) applyInputsToPage(last);
+  }
+})();
+
+/* --------------- Scenario Simulator --------------- */
+function syncSlider(sliderId, textId){
+  const s = document.getElementById(sliderId), t = document.getElementById(textId);
+  if (!s || !t) return;
+  if (document.activeElement === t) {
+    const parsed = parseFloat(t.value);
+    if (!isNaN(parsed)) s.value = parsed;
+    applyScenarioFromSliders();
+  } else {
+    t.value = s.value;
+    applyScenarioFromSliders();
+  }
+}
+function applyScenarioFromSliders(){
+  const Rf = document.getElementById('simRf').value;
+  const Rm = document.getElementById('simRm').value;
+  const Beta = document.getElementById('simBeta').value;
+  const g = document.getElementById('simG').value;
+  document.getElementById('simRfTxt').value = Rf;
+  document.getElementById('simRmTxt').value = Rm;
+  document.getElementById('simBetaTxt').value = Beta;
+  document.getElementById('simGTxt').value = g;
+
+  // apply to calculators
+  document.getElementById('capmRf').value = Rf;
+  document.getElementById('capmRm').value = Rm;
+  document.getElementById('capmBeta').value = Beta;
+  document.getElementById('dgmG').value = g;
+
+  calcCAPM(); calcDGM();
+  updateAnalytics();
+}
+function applyScenarioPreset(p){
+  if (p === 'bull'){
+    document.getElementById('simRf').value = 5; document.getElementById('simRm').value = 16; document.getElementById('simBeta').value = 1.1; document.getElementById('simG').value = 7;
+  } else if (p === 'base'){
+    document.getElementById('simRf').value = 6; document.getElementById('simRm').value = 12; document.getElementById('simBeta').value = 1; document.getElementById('simG').value = 5;
+  } else {
+    document.getElementById('simRf').value = 7; document.getElementById('simRm').value = 9; document.getElementById('simBeta').value = 0.9; document.getElementById('simG').value = 2;
+  }
+  applyScenarioFromSliders();
+}
+
+/* --------------- PDF Report (jsPDF) --------------- */
+async function generatePDFReport(){
+  // ensure latest outputs
+  calcDebenture(); calcCAPM(); calcDGM(); calcWACC(); calcMSDDM(); calcBeta();
+  const inputs = collectAllInputs();
+  const outputs = {
+    deb: document.getElementById('debResult').textContent,
+    capm: document.getElementById('capmResult').textContent,
+    dgm: document.getElementById('dgmResult').textContent,
+    wacc: document.getElementById('waccResult').textContent,
+    msddm: document.getElementById('msResult').textContent,
+    beta: document.getElementById('betaResult').textContent
+  };
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:'pt', format:'a4' });
+  const pageW = doc.internal.pageSize.getWidth();
+  let y = 40;
+  doc.setFontSize(16); doc.text('Corporate Finance — Report', 40, y); y += 18;
+  doc.setFontSize(9); doc.text('Generated: ' + new Date().toLocaleString(), 40, y); y += 18;
+  doc.setFontSize(11); doc.text('Inputs snapshot:', 40, y); y += 14;
+  doc.setFontSize(9);
+  const leftX = 40, rightX = pageW/2 + 10;
+  let rowY = y, col=0;
+  for (const k in inputs){
+    const colX = (col % 2 === 0) ? leftX : rightX;
+    doc.text(k + ': ' + String(inputs[k]||''), colX, rowY);
+    if (col % 2 === 1) rowY += 12;
+    col++;
+  }
+  y = rowY + 18;
+  doc.setFontSize(11); doc.text('Key outputs:', 40, y); y += 14;
+  doc.setFontSize(10);
+  for (const k in outputs){
+    doc.text(k.toUpperCase() + ': ' + outputs[k], 40, y);
+    y += 12;
+  }
+  y += 8;
+
+  async function addCanvas(canvasId, title){
+    try {
+      const c = document.getElementById(canvasId);
+      resizeCanvasForDevice(c);
+      const data = c.toDataURL('image/png');
+      const img = new Image(); img.src = data;
+      await new Promise(r=> img.onload = r);
+      const imgW = Math.min(480, pageW - 72);
+      const imgH = (img.height / img.width) * imgW;
+      if (y + imgH + 40 > doc.internal.pageSize.getHeight()){ doc.addPage(); y = 40; }
+      doc.setFontSize(11); doc.text(title, 40, y); y += 12;
+      doc.addImage(data, 'PNG', 40, y, imgW, imgH);
+      y += imgH + 12;
+    } catch (e) { console.warn('canvas add failed', canvasId, e); }
+  }
+
+  await addCanvas('debChart', 'Debenture (Gross vs Post-tax)');
+  await addCanvas('waccPie', 'WACC Composition');
+  await addCanvas('waccBar', 'WACC Contributions');
+  await addCanvas('dgmSensitivity', 'DGM Sensitivity Grid');
+  await addCanvas('msChart', 'MSDDM Dividend Path');
+
+  doc.save('corporate-finance-report.pdf');
+}
+
+/* --------------- Analytics chart (simple combined view) --------------- */
+function drawAnalyticsChart(){
+  const canvas = document.getElementById('analyticsChart'); resizeCanvasForDevice(canvas);
+  const ctx = canvas.getContext('2d'); clearCanvas(canvas);
+  const W = canvas.width, H = canvas.height, pad=40;
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted');
+  ctx.font = '12px Inter';
+  ctx.fillText('Analytics snapshot (visual)', pad, 20);
+  // draw sample bars to represent WACC, CAPM, DGM (pulled if available)
+  const waccText = document.getElementById('waccResult').textContent || '';
+  const capmText = document.getElementById('capmResult').textContent || '';
+  const dgmText = document.getElementById('dgmResult').textContent || '';
+  const vals = [
+    {label:'WACC', value: extractPct(waccText)},
+    {label:'CAPM', value: extractPct(capmText)},
+    {label:'DGM', value: extractPct(dgmText)}
+  ];
+  const max = Math.max(5, ...vals.map(v=>v.value));
+  const barW = 120;
+  for (let i=0;i<vals.length;i++){
+    const x = pad + i*(barW+30);
+    const h = (vals[i].value / max) * (H - pad*2.5);
+    ctx.fillStyle = i===0 ? getComputedStyle(document.documentElement).getPropertyValue('--accent-end') : getComputedStyle(document.documentElement).getPropertyValue('--accent-start');
+    ctx.fillRect(x, H - pad - h, barW, h);
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text');
+    ctx.fillText(vals[i].label + ' ('+(vals[i].value||'--')+'%)', x, H - pad + 14);
+  }
+}
+function extractPct(txt){
+  const m = txt.match(/(-?\d+(\.\d+)?)%/);
+  return m ? parseFloat(m[1]) : 0;
+}
+function updateAnalytics(){ drawAnalyticsChart(); }
+
+/* --------------- Utility modal --------------- */
+function openModal(html){
+  document.getElementById('modalContent').innerHTML = html;
+  document.getElementById('modalRoot').style.display = 'flex';
+}
+function closeModal(){ document.getElementById('modalRoot').style.display = 'none'; }
+
+/* --------------- Small UX init --------------- */
+document.querySelectorAll('input').forEach(i => {
+  i.addEventListener('change', ()=> { try { saveStateToLocalAuto(); } catch(e){} });
+});
+window.addEventListener('load', ()=> {
+  // attach some default sample values
+  document.getElementById('debInterest').value = 50000;
+  document.getElementById('debNet').value = 950000;
+  document.getElementById('debTax').value = 25;
+  document.getElementById('waccE').value = 200000; document.getElementById('waccD').value = 100000;
+  document.getElementById('waccRe').value = 12; document.getElementById('waccRd').value = 8; document.getElementById('waccTax').value = 25;
+  applyScenarioFromSliders();
+  calcDebenture(); calcCAPM(); calcDGM(); calcWACC(); calcMSDDM(); calcBeta();
+  updateAnalytics();
+});
 
 </script>
 </body>
